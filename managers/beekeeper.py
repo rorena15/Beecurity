@@ -5,7 +5,10 @@ from configs.constants import (
     INSPECTION_STRESS_RATE,
     SMOKER_AGGRESSION_REDUCTION,
     SMOKER_HONEY_CONSUMPTION_INC,
-    SMOKER_FORAGING_PENALTY
+    SMOKER_FORAGING_PENALTY,
+    SAFE_HARVEST_RATIO,
+    STARVATION_RISK_MULTIPLIER,
+    ROBBING_RISK_MULTIPLIER
 )
 
 class BeekeeperManager:
@@ -61,7 +64,29 @@ class BeekeeperManager:
         stress_penalty = max(0.0, 1.0 - (self.colony_stress / 100.0))
         return stress_penalty
 
+    def harvest_honey(self, access_key: str, total_honey_stock: float, request_amount: float) -> float:
+        """
+        채밀(Data Extraction)을 시도합니다. 대량 회수 시 군집 방어력과 생존력이 급감합니다.
+        """
+        if self._valid_access_key != access_key:
+            return 0.0
+            
+        # Setter Validation: 음수 및 최대량 초과 요청 방지 (Anti-Cheating)
+        if request_amount <= 0 or request_amount > total_honey_stock:
+            return 0.0
+
+        harvest_ratio = request_amount / total_honey_stock
+        
+        # 안전 회수 비율(30%)을 초과하여 채밀할 경우 패널티(취약점) 부과
+        if harvest_ratio > SAFE_HARVEST_RATIO:
+            excess_ratio = harvest_ratio - SAFE_HARVEST_RATIO
+            self.starvation_risk += excess_ratio * STARVATION_RISK_MULTIPLIER
+            self.robbing_risk += excess_ratio * ROBBING_RISK_MULTIPLIER
+            self._log_audit("WARNING: Over-harvesting detected. System vulnerability increased.")
+
+        # 채밀 후 남은 자원을 계산하여 반환
+        extracted_amount = request_amount
+        return extracted_amount
+
     def _log_audit(self, message: str) -> None:
-        """관리자의 모든 개입은 추후 보안 감사 로그로 활용하기 위해 기록됩니다."""
-        # Phase 8의 Audit Logging 객체와 연동
         pass
