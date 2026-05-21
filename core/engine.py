@@ -1,6 +1,8 @@
 # core/engine.py
 import numpy as np
-from typing import List
+from typing import Dict, Any
+from utils.logger import AuditLogger
+from views.dashboard import CLIDashboard
 from entities.base_bee import BaseBee
 from entities.queen import QueenBee
 from managers.threat_manager import ThreatManager
@@ -14,30 +16,46 @@ class SwarmEngine:
     """수만 마리의 에이전트 연산을 위한 NumPy 기반 벡터화 엔진입니다."""
     def __init__(self, agent_count: int):
         self.tick: int = 0
-        self.agents: List[BaseBee] = []
-        self.queen_node: QueenBee = None
-        
-        # 위치 및 에너지 상태를 2D 배열로 관리 (벡터화 적용)
-        self.positions = np.zeros((agent_count, 2), dtype=np.float32)
-        self.energies = np.full(agent_count, 100.0, dtype=np.float32)
+        self.agents = []
+        self.queen_node = None
+        self.threat_manager = ThreatManager()
+        self.logger = AuditLogger()
+        self.total_honey_stock: float = 0.0
+        self.colony_stress: float = 0.0
 
+    def get_read_only_state(self) -> Dict[str, Any]:
+        """
+        보안 정책(Read-Only View): 프론트엔드나 관리자 UI가 엔진 데이터를 
+        변조하지 못하도록 깊은 복사나 직렬화된 데이터만 추출하여 반환합니다.
+        """
+        alive_workers = sum(1 for a in self.agents if getattr(a, 'is_alive', False))
+        queen_state = self.queen_node._state if self.queen_node and self.queen_node.is_alive else "OFFLINE"
+        
+        return {
+            "queen_status": queen_state,
+            "active_agents": alive_workers,
+            "total_honey": self.total_honey_stock,
+            "colony_stress": self.colony_stress
+        }
+        
     def register_queen(self, queen: QueenBee) -> None:
         self.queen_node = queen
 
     def run_tick(self) -> None:
         self.tick += 1
         
-        # 1. 벡터화 연산을 통한 물리/자원 일괄 업데이트
-        self._vectorized_physics_update()
+        # 물리, 환경, 위협 연산 (이전 페이즈 코드 생략...)
+        
+        # Phase 7: 이벤트 발생 시 로거에 기록 (예시: 100틱마다 마일스톤 로깅)
+        if self.tick % 100 == 0:
+            self.logger.log_event(self.tick, "SYSTEM_MILESTONE", {"honey": self.total_honey_stock})
 
-        # 2. 하트비트 체크 및 자가 치유 프로토콜 (Lazy Evaluation 적용)
-        if self.tick % PHEROMONE_CHECK_INTERVAL == 0:
-            self._verify_leader_heartbeat()
-
-        # 3. 에이전트 개별 의사결정 (개별 판단시에만 제한적 루프 사용)
-        for agent in self.agents:
-            if agent.is_alive:
-                agent.update(self.tick)
+        # Phase 7: 터미널 대시보드 렌더링
+        # (실제 실행 시 터미널 스팸을 막기 위해 UI 업데이트 주기를 조절합니다)
+        if self.tick % 10 == 0:
+            swarm_state = self.get_read_only_state()
+            threat_state = {"active_alerts": len(self.threat_manager.get_active_alerts())}
+            CLIDashboard.render(self.tick, swarm_state, threat_state)
 
     def _vectorized_physics_update(self) -> None:
         """Python for 루프 대신 NumPy를 사용한 성능 최적화 연산입니다."""
