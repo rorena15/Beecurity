@@ -1,9 +1,3 @@
-# Created by https://www.toptal.com/developers/gitignore/api/visualstudio,python
-# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudio,python
-
-### Python ###
-# Byte-compiled / optimized / DLL files
-__pycache__/
 *.py[cod]
 *$py.class
 
