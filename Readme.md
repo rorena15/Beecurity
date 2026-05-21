@@ -1,5 +1,5 @@
 # 디렉토리 구조
----
+```
 hive_mind_engine/ [cite: 22]
 │
 ├── configs/ [cite: 22]
@@ -31,4 +31,4 @@ hive_mind_engine/ [cite: 22]
 │
 └── scripts/
     └── generate_entity.py      # 보일러플레이트 자동 생성을 위한 스캐폴딩 스크립트 [cite: 39, 159]
----
+```
