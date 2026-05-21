@@ -3,6 +3,7 @@ import numpy as np
 from typing import List
 from entities.base_bee import BaseBee
 from entities.queen import QueenBee
+from managers.threat_manager import ThreatManager
 from configs.constants import (
                                 PHEROMONE_CHECK_INTERVAL,
                                 ENERGY_CONSUMPTION_RATE,
@@ -90,3 +91,33 @@ class SwarmEngine:
         if eligible_workers:
             new_master = max(eligible_workers, key=lambda worker: worker.experience)
             new_master.promote_to_temporary_master()
+    
+    def _check_external_threats(self) -> None:
+        """Threat Manager로부터 활성화된 위협을 확인하고 군집에 방어 신호를 브로드캐스팅합니다."""
+        alerts = self.threat_manager.get_active_alerts()
+        for alert in alerts:
+            if alert["status"] == "ACTIVE":
+                self._broadcast_intrusion_alert(alert["type"], alert["signature"])
+                self._process_heat_balling_physics(alert)
+
+    def _broadcast_intrusion_alert(self, threat_type: str, signature: str) -> None:
+        """모든 에이전트에게 침입 경고를 브로드캐스팅하고 차단 블랙리스트를 공유합니다."""
+        for agent in self.agents:
+            if agent.is_alive and hasattr(agent, 'receive_intrusion_alert'):
+                agent.receive_intrusion_alert(threat_type, signature)
+
+    def _process_heat_balling_physics(self, alert: dict) -> None:
+        """
+        말벌 침입 시 군집이 뭉쳐 열구(Heat-balling)를 형성하는 물리/에너지 연산입니다.
+        대규모 연산 최적화를 위해 리스트 컴프리헨션을 적용합니다[cite: 238].
+        """
+        heat_balling_agents = [
+            a for a in self.agents 
+            if a.is_alive and "combat" in a.components and a.components["combat"].is_heat_balling
+        ]
+        
+        total_heat = sum(a.components["combat"].heat_contribution for a in heat_balling_agents)
+        
+        # 열구 온도가 임계치 이상으로 올라가면 위협(말벌) 무력화 판정 처리
+        # if total_heat >= HEAT_BALLING_TEMP_THRESHOLD:
+        #     alert["status"] = "NEUTRALIZED"

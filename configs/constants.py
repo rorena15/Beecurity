@@ -29,3 +29,9 @@ PHEROMONE_AUTH_THRESHOLD = 20.0        # 페로몬 인증 최소 임계치
 SAFE_HARVEST_RATIO = 0.30              # 총 꿀 보유량 대비 안전 회수 비율 (30%)
 STARVATION_RISK_MULTIPLIER = 1.5       # 기아 위험 증가 가중치
 ROBBING_RISK_MULTIPLIER = 2.0          # 도봉(외부 침입) 위험 증가 가중치
+
+# 방어 및 전투 인스턴스 상수
+HEAT_BALLING_TEMP_THRESHOLD = 47.0    # 말벌을 무력화할 수 있는 열구 임계 온도
+HEAT_BALLING_ENERGY_COST = 5.0        # 열구 형성 시 초당 에너지 소모 오버헤드
+HORNET_DDOS_THRESHOLD = 50            # DDoS 탐지 임계치 (위협 객체 수)
+MITE_APT_DAMAGE_RATE = 0.5            # 응애(APT)에 의한 틱당 체력 감소율

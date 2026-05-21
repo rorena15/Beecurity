@@ -1,6 +1,7 @@
 # entities/components.py
 from typing import Optional
 from configs.constants import PHEROMONE_AUTH_THRESHOLD
+from entities.components import BaseComponent
 
 class BaseComponent:
     def update(self, tick: int) -> None:
@@ -47,3 +48,23 @@ class LayingWorkerComponent(BaseComponent):
         # 페로몬(정책 신호)이 다시 임계치 이상으로 회복되면 권한 드리프트 중단
         if current_pheromone >= PHEROMONE_AUTH_THRESHOLD:
             self.is_active = False
+            
+class CombatComponent(BaseComponent):
+    """외부 위협(말벌-DDoS 등)에 대응하기 위해 에이전트에 주입되는 전투 컴포넌트입니다."""
+    def __init__(self):
+        self.sting_status: bool = False # 침 사용 여부 [cite: 138]
+        self.is_heat_balling: bool = False
+        self.heat_contribution: float = 0.0
+
+    def use_sting(self) -> bool:
+        """침을 사용합니다. 생물학적 고증에 따라 침 사용 시 해당 에이전트는 즉시 사망 처리됩니다[cite: 138]."""
+        if not self.sting_status:
+            self.sting_status = True
+            # TODO: 에이전트 생명주기 관리자에 사망 신호 전송
+            return True
+        return False
+
+    def participate_in_heat_ball(self) -> None:
+        """열구(Heat-balling) 인스턴스에 참여하여 군집의 방어 온도를 높입니다."""
+        self.is_heat_balling = True
+        self.heat_contribution = 1.5  # 에이전트당 온도 상승 기여도

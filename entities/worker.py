@@ -1,8 +1,7 @@
 # entities/worker.py
 from entities.base_bee import BaseBee
-from entities.components import ForagingComponent, LayingWorkerComponent
+from entities.components import ForagingComponent, LayingWorkerComponent,CombatComponent
 from configs.constants import PHEROMONE_AUTH_THRESHOLD
-
 class WorkerBee(BaseBee):
     def __init__(self):
         super().__init__()
@@ -38,3 +37,25 @@ class WorkerBee(BaseBee):
         elif self.role == "NURSE" or self.role == "BUILDER":
             # 내부망 자원 가공 및 육아 로직 실행
             pass
+        
+    def receive_intrusion_alert(self, threat_type: str, signature: str) -> None:
+        """
+        외부 공격 감지 시, 에이전트의 상태를 즉시 방어 모드로 강제 전환합니다.
+        """
+        if threat_type == "HORNET_DDOS":
+            # 외부 공격 감지 시, 모든 외역봉은 즉시 복귀하여 입구(Gateway) 방어 모드로 전환 
+            if self.role in ["FORAGER", "SCOUT"]:
+                self.change_state("DEFENSE_RETURN")
+            
+            # 방어 역할을 수행하기 위해 전투 컴포넌트를 동적으로 주입
+            if "combat" not in self.components:
+                self.add_component("combat", CombatComponent())
+            
+            self.role = "GUARD" # 현재 역할을 문지기벌로 변경 [cite: 137]
+            self._update_blacklist(signature)
+
+    def _update_blacklist(self, signature: str) -> None:
+        """공격 시그니처가 확인된 소스를 전체 노드가 공유받아 로컬 블랙리스트에 업데이트합니다."""
+        if not hasattr(self, "threat_blacklist"):
+            self.threat_blacklist = set()
+        self.threat_blacklist.add(signature)
