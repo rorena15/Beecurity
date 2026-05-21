@@ -42,6 +42,7 @@ def main():
         time.sleep(0.1)
         
     print("\n🏁 시뮬레이션이 안전하게 종료되었습니다. (Audit Log를 확인하세요)")
+    engine.logger.flush_to_disk()
 
 if __name__ == "__main__":
     main()
